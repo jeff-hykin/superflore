@@ -177,6 +177,15 @@ class NixExpression:
         maybe_github_data = self.attempt_github_data()
         if maybe_github_data:
             owner, repo, rev = maybe_github_data
+            # super slow, but is the only reliable way AFAIK (would be a lot better to do this asyncly)
+            import subprocess
+            try:
+                # this sha256 can be different from the tarball sha256 (e.g. self.src_256)
+                sha256 = subprocess.check_output(['nix-prefetch', 'fetchFromGitHub', "--repo", repo, "--owner", owner, "--rev", rev ]).decode('utf-8')[0:-1]
+            except Exception as error:
+                print(f'''if you're seeing this warning a lot, please install nix-prefetch then re-run this script''')
+                sha256 = "sha256:0000000000000000000000000000000000000000000000000000"
+            
             ret += dedent('''
             buildRosPackage {{
               pname = "ros-{distro_name}-{name}";
@@ -189,7 +198,7 @@ class NixExpression:
                     owner = "{owner}";
                     repo = "{repo}";
                     rev = "{rev}";
-                    sha256 = "{src_sha256}";
+                    sha256 = "{sha256}";
                   }};
     
               buildType = "{build_type}";
@@ -202,7 +211,7 @@ class NixExpression:
                 version=self.version,
                 src_url=self.src_url,
                 src_name=self.src_name,
-                src_sha256=self.src_sha256,
+                sha256=sha256,
                 build_type=self.build_type)
         # otherwise fallback on more generic fetchurl
         else:
