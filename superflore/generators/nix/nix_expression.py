@@ -117,6 +117,16 @@ class NixExpression:
     def _to_nix_parameter(dep: str) -> str:
         return dep.split('.')[0]
 
+    @property
+    def url_host(self):
+        # https://github.com/owner/repo/whatever => "github.com"
+        if self.src_url:
+            after_the_https_part = self.src_url.split("//")[1]
+            first_slash_index = after_the_https_part.index("/")
+            if first_slash_index == -1:
+                first_slash_index = len(after_the_https_part)
+            return after_the_https_part[0:first_slash_index]
+    
     def get_text(self, distributor: str, license_name: str) -> str:
         """
         Generate the Nix expression, given the distributor line
