@@ -90,6 +90,11 @@ def generate_installers(
             err("{0}%: {1} for package {2}!".format(percent, failed_msg, pkg))
             bad_installers.append(pkg)
             failed = failed + 1
+        except FileNotFoundError:
+            failed_msg = 'Failed to generate %s FileNotFoundError' % what_generating
+            err("{0}%: {1} for package {2}!".format(percent, failed_msg, pkg))
+            bad_installers.append(pkg)
+            failed = failed + 1
         except KeyError:
             failed_msg = 'Failed to generate %s' % what_generating
             err("{0}%: {1} for package {2}!".format(percent, failed_msg, pkg))
