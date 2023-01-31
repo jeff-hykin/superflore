@@ -141,7 +141,7 @@ class NixExpression:
             # folders[3] == "archive"
             # folders[4:] == the tag + ".tar.gz"
             owner = folders[1]
-            repo_name = folders[2]
+            repo = folders[2]
             
             tag_name_pieces = folders[4:]
             # chop off the .tar.gz part
