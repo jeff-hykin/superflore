@@ -184,7 +184,7 @@ class NixExpression:
                 sha256 = subprocess.check_output(['nix-prefetch', 'fetchFromGitHub', "--repo", repo, "--owner", owner, "--rev", rev ]).decode('utf-8')[0:-1]
             except Exception as error:
                 print(f'''if you're seeing this warning a lot, please install nix-prefetch then re-run this script''')
-                sha256 = "sha256:0000000000000000000000000000000000000000000000000000"
+                sha256 = self.src_sha256
             
             ret += dedent('''
             buildRosPackage {{
