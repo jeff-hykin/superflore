@@ -127,6 +127,28 @@ class NixExpression:
                 first_slash_index = len(after_the_https_part)
             return after_the_https_part[0:first_slash_index]
     
+    def attempt_github_data(self):
+        required_ending = ".tar.gz"
+        # owner, repo, rev
+        if self.url_host != "github.com" or not self.src_url.endswith(required_ending):
+            return None
+        else:
+            no_https = "/".join(self.src_url.split("//")[1:])
+            folders = no_https.split("/")
+            # folders[0] == "github.com"
+            # folders[1] == the owner
+            # folders[2] == the repo name
+            # folders[3] == "archive"
+            # folders[4:] == the tag + ".tar.gz"
+            owner = folders[1]
+            repo_name = folders[2]
+            
+            tag_name_pieces = folders[4:]
+            # chop off the .tar.gz part
+            tag_name_pieces[-1] = tag_name_pieces[-1][:-len(required_ending)]
+            tag = "/".join(tag_name_pieces)
+            return [ owner, repo, tag ]
+    
     def get_text(self, distributor: str, license_name: str) -> str:
         """
         Generate the Nix expression, given the distributor line
@@ -150,27 +172,60 @@ class NixExpression:
                                         self.native_build_inputs |
                                         self.propagated_native_build_inputs)))
                          ) + ' }:'
-
-        ret += dedent('''
-        buildRosPackage {{
-          pname = "ros-{distro_name}-{name}";
-          version = "{version}";
-
-          src = fetchurl {{
-            url = "{src_url}";
-            name = "{src_name}";
-            sha256 = "{src_sha256}";
-          }};
-
-          buildType = "{build_type}";
-        ''').format(
-            distro_name=self.distro_name,
-            name=self.name,
-            version=self.version,
-            src_url=self.src_url,
-            src_name=self.src_name,
-            src_sha256=self.src_sha256,
-            build_type=self.build_type)
+        
+        # if possible (for checksum reasons) switch to github fetcher
+        maybe_github_data = self.attempt_github_data()
+        if maybe_github_data:
+            owner, repo, rev = maybe_github_data
+            ret += dedent('''
+            buildRosPackage {{
+              pname = "ros-{distro_name}-{name}";
+              version = "{version}";
+                
+              src = let
+                 fetchFromGithub = (builtins.import (builtins.fetchTarball ({{ url = "https://github.com/NixOS/nixpkgs/archive/aa0e8072a57e879073cee969a780e586dbe57997.tar.gz"; }})) ({{}})).fetchFromGitHub
+                in
+                  fetchFromGithub {{
+                    owner = "{owner}";
+                    repo = "{repo}";
+                    rev = "{rev}";
+                    sha256 = "{src_sha256}";
+                  }};
+    
+              buildType = "{build_type}";
+            ''').format(
+                distro_name=self.distro_name,
+                name=self.name,
+                owner=owner,
+                repo=repo,
+                rev=rev,
+                version=self.version,
+                src_url=self.src_url,
+                src_name=self.src_name,
+                src_sha256=self.src_sha256,
+                build_type=self.build_type)
+        # otherwise fallback on more generic fetchurl
+        else:
+            ret += dedent('''
+            buildRosPackage {{
+              pname = "ros-{distro_name}-{name}";
+              version = "{version}";
+    
+              src = fetchurl {{
+                url = "{src_url}";
+                name = "{src_name}";
+                sha256 = "{src_sha256}";
+              }};
+    
+              buildType = "{build_type}";
+            ''').format(
+                distro_name=self.distro_name,
+                name=self.name,
+                version=self.version,
+                src_url=self.src_url,
+                src_name=self.src_name,
+                src_sha256=self.src_sha256,
+                build_type=self.build_type)
 
         if self.build_inputs:
             ret += "  buildInputs = {};\n" \
