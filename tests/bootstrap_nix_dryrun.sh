@@ -29,11 +29,16 @@ fi
 # 
 # actual setup
 # 
-sudo python3 ./setup.py install
-sudo rosdep init
-rosdep update
+# if superflore-gen-nix doesnt exist
+if [ -z "$(command -v "superflore-gen-nix")" ]
+then
+    sudo python3 ./setup.py install
+    sudo rosdep init
+    rosdep update
+fi
 
 # 
 # actual run
 # 
+sudo python3 ./setup.py install
 superflore-gen-nix --dry-run
