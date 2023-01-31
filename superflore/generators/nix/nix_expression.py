@@ -181,7 +181,7 @@ class NixExpression:
             import subprocess
             try:
                 # this sha256 can be different from the tarball sha256 (e.g. self.src_256)
-                sha256 = subprocess.check_output(['nix-prefetch', 'fetchFromGitHub', "--repo", repo, "--owner", owner, "--rev", rev ]).decode('utf-8')[0:-1]
+                sha256 = subprocess.check_output(['nix-prefetch', 'fetchFromGitHub', '--quiet', "--repo", repo, "--owner", owner, "--rev", rev ]).decode('utf-8')[0:-1]
             except Exception as error:
                 print(f'''if you're seeing this warning a lot, please install nix-prefetch then re-run this script''')
                 sha256 = self.src_sha256
@@ -192,7 +192,7 @@ class NixExpression:
               version = "{version}";
                 
               src = let
-                 fetchFromGithub = (builtins.import (builtins.fetchTarball ({{ url = "https://github.com/NixOS/nixpkgs/archive/aa0e8072a57e879073cee969a780e586dbe57997.tar.gz"; }})) ({{}})).fetchFromGitHub
+                 fetchFromGithub = (builtins.import (builtins.fetchTarball ({{ url = "https://github.com/NixOS/nixpkgs/archive/aa0e8072a57e879073cee969a780e586dbe57997.tar.gz"; }})) ({{}})).fetchFromGitHub;
                 in
                   fetchFromGithub {{
                     owner = "{owner}";
