@@ -41,4 +41,21 @@ fi
 # actual run
 # 
 sudo python3 ./setup.py install
-superflore-gen-nix --dry-run
+
+tar_cache_folder=".temp.ignore/tar_cache/"
+mkdir -p "$tar_cache_folder"
+
+output_folder=".temp.ignore/nix-ros-overlay/"
+
+if ! [ -d "$output_folder" ]
+then
+    cd "$(dirname "$output_folder")"
+    git clone git@github.com:jeff-hykin/nix-ros-overlay.git
+    cd -
+fi
+
+superflore-gen-nix \
+    --dry-run \
+    --all \
+    --output-repository-path "$output_folder" \
+    --tar-archive-dir "$tar_cache_folder"
